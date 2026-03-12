@@ -1,16 +1,6 @@
-// ─────────────────────────────────────────────────────────────
-// firebase.js — Configuración de Firebase
-//
-// PASOS:
-// 1. Ve a https://console.firebase.google.com
-// 2. Crea un proyecto llamado "family-birthday"
-// 3. Activa Firestore Database → Iniciar en modo producción
-// 4. Ve a Configuración del proyecto → Tus apps → Web (</>)
-// 5. Registra la app y reemplaza los valores de abajo
-// ─────────────────────────────────────────────────────────────
-
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyDz1xxMrqQKdOhZIZDczR5rMnlptwBXbAM",
@@ -21,5 +11,6 @@ const firebaseConfig = {
   appId:             "1:403505346642:web:8394237534c0662e01078b",
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+const app     = initializeApp(firebaseConfig);
+export const db      = getFirestore(app);
+export const storage = getStorage(app);

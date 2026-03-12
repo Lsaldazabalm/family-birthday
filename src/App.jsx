@@ -71,18 +71,17 @@ function hasPaid(payments, payerId, birthdayMemberId, month, year) {
 
 // ── Avatar ─────────────────────────────────────────────────────────────────
 function Avatar({ member, size=44 }) {
-  const color = AVATAR_COLORS[member.id % AVATAR_COLORS.length];
+  // Dicebear: avatar SVG único generado por nombre — sin Storage, sin costo
+  const seed   = encodeURIComponent(member.name || "user");
+  const imgUrl = `https://api.dicebear.com/8.x/thumbs/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf&radius=50`;
   return (
-    <div style={{ width:size, height:size, borderRadius:"50%", flexShrink:0,
-      background: member.photo ? undefined : color,
-      backgroundImage: member.photo ? `url(${member.photo})` : undefined,
-      backgroundSize:"cover", backgroundPosition:"center",
-      display:"flex", alignItems:"center", justifyContent:"center",
-      fontSize:size*0.38, fontWeight:800, color:"#fff",
-      border:"2.5px solid rgba(255,255,255,0.22)",
-      boxShadow:"0 2px 10px rgba(0,0,0,0.28)" }}>
-      {!member.photo && getInitials(member.name)}
-    </div>
+    <img
+      src={imgUrl}
+      alt={member.name}
+      width={size}
+      height={size}
+      style={{ borderRadius:"50%", flexShrink:0, border:"2.5px solid rgba(255,255,255,0.22)", boxShadow:"0 2px 10px rgba(0,0,0,0.28)", background:"#1e0845", display:"block" }}
+    />
   );
 }
 
@@ -235,14 +234,6 @@ function GroupProfileScreen({ groupProfile, onSave, onBack, isAdmin }) {
   const [name,  setName]  = useState(groupProfile.name  || "Mi Grupo Familiar");
   const [desc,  setDesc]  = useState(groupProfile.desc  || "");
   const [photo, setPhoto] = useState(groupProfile.photo || "");
-  const fileRef = useRef();
-
-  const handleFile = (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const r = new FileReader();
-    r.onload = ev => setPhoto(ev.target.result);
-    r.readAsDataURL(file);
-  };
 
   return (
     <div style={{minHeight:"100vh",background:"#0a0118",paddingBottom:100}}>
@@ -251,15 +242,11 @@ function GroupProfileScreen({ groupProfile, onSave, onBack, isAdmin }) {
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.08)",border:"none",borderRadius:12,padding:"9px 15px",color:"#fff",cursor:"pointer",fontSize:18}}>←</button>
           <h2 style={{color:"#fff",margin:0,fontWeight:800,fontSize:20}}>Perfil del Grupo</h2>
         </div>
-        {/* Group avatar */}
+        {/* Group avatar — emoji, sin subida de archivos */}
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-          <div onClick={()=>isAdmin&&fileRef.current.click()}
-            style={{width:100,height:100,borderRadius:"50%",background:"linear-gradient(135deg,#a855f7,#6366f1)",display:"flex",alignItems:"center",justifyContent:"center",cursor:isAdmin?"pointer":"default",overflow:"hidden",border:"3px solid rgba(255,255,255,0.2)",flexShrink:0}}>
-            {photo ? <img src={photo} alt="grupo" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                   : <span style={{fontSize:40}}>👨‍👩‍👧‍👦</span>}
+          <div style={{width:100,height:100,borderRadius:"50%",background:"linear-gradient(135deg,#a855f7,#6366f1)",display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",border:"3px solid rgba(255,255,255,0.2)",flexShrink:0}}>
+            <span style={{fontSize:46}}>👨‍👩‍👧‍👦</span>
           </div>
-          {isAdmin && <p style={{color:"rgba(255,255,255,0.4)",fontSize:12,margin:0}}>Toca para cambiar foto</p>}
-          <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleFile}/>
         </div>
       </div>
 
@@ -276,7 +263,7 @@ function GroupProfileScreen({ groupProfile, onSave, onBack, isAdmin }) {
             placeholder="Ej: La junta de cumpleaños de la familia García 🎂"/>
         </div>
         {isAdmin && (
-          <button onClick={()=>onSave({name,desc,photo})}
+          <button onClick={()=>onSave({name,desc,photo:""})}
             style={{width:"100%",padding:"15px",background:"linear-gradient(135deg,#a855f7,#6366f1)",border:"none",borderRadius:16,color:"#fff",fontWeight:800,fontSize:16,cursor:"pointer"}}>
             Guardar cambios
           </button>
@@ -329,21 +316,12 @@ function exportPDF(members, payments, month, year, groupProfile) {
 function EditProfileScreen({ member, onSave, onBack }) {
   const [name,    setName]    = useState(member.name);
   const [phone,   setPhone]   = useState(member.phone);
-  const [photo,   setPhoto]   = useState(member.photo || "");
   const [section, setSection] = useState("info"); // info | pin
-  const fileRef = useRef();
-
-  const handleFile = e => {
-    const file = e.target.files[0]; if (!file) return;
-    const r = new FileReader();
-    r.onload = ev => setPhoto(ev.target.result);
-    r.readAsDataURL(file);
-  };
 
   if (section === "pin") return (
     <ChangePinScreen
       member={member}
-      onSave={newPin => { onSave({ ...member, name, phone, photo, pin: newPin }); }}
+      onSave={newPin => { onSave({ ...member, name, phone, pin: newPin }); }}
       onBack={() => setSection("info")}
     />
   );
@@ -355,16 +333,10 @@ function EditProfileScreen({ member, onSave, onBack }) {
           <button onClick={onBack} style={{background:"rgba(255,255,255,0.1)",border:"none",borderRadius:12,padding:"9px 15px",color:"#fff",cursor:"pointer",fontSize:18}}>←</button>
           <h2 style={{color:"#fff",margin:0,fontWeight:800,fontSize:20}}>Editar mi perfil</h2>
         </div>
-        {/* Avatar */}
+        {/* Avatar Dicebear — generado automáticamente por nombre */}
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8}}>
-          <div onClick={()=>fileRef.current.click()} style={{position:"relative",cursor:"pointer"}}>
-            {photo
-              ? <img src={photo} style={{width:90,height:90,borderRadius:"50%",objectFit:"cover",border:"3px solid rgba(251,191,36,0.6)"}} alt="foto"/>
-              : <div style={{width:90,height:90,borderRadius:"50%",background:"linear-gradient(135deg,#fbbf24,#f59e0b)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,border:"3px solid rgba(251,191,36,0.6)"}}>{member.name[0]}</div>}
-            <div style={{position:"absolute",bottom:2,right:2,width:26,height:26,borderRadius:"50%",background:"#fbbf24",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13}}>📷</div>
-          </div>
-          <p style={{color:"rgba(255,255,255,0.4)",fontSize:12,margin:0}}>Toca para cambiar foto</p>
-          <input ref={fileRef} type="file" accept="image/*" style={{display:"none"}} onChange={handleFile}/>
+          <Avatar member={member} size={90} />
+          <p style={{color:"rgba(255,255,255,0.4)",fontSize:12,margin:0}}>Avatar generado por tu nombre</p>
         </div>
       </div>
 
@@ -380,7 +352,7 @@ function EditProfileScreen({ member, onSave, onBack }) {
             style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.07)",border:"1.5px solid rgba(255,255,255,0.1)",borderRadius:14,color:"#fff",fontSize:15,boxSizing:"border-box"}}/>
         </div>
 
-        <button onClick={()=>onSave({...member,name,phone,photo})}
+        <button onClick={()=>onSave({...member,name,phone})}
           disabled={!name.trim()||!phone.trim()}
           style={{width:"100%",padding:"15px",background:name.trim()&&phone.trim()?"linear-gradient(135deg,#fbbf24,#f59e0b)":"#1e1e2e",border:"none",borderRadius:16,color:name.trim()&&phone.trim()?"#431407":"rgba(255,255,255,0.2)",fontWeight:800,fontSize:16,cursor:name.trim()&&phone.trim()?"pointer":"not-allowed",marginBottom:12}}>
           Guardar cambios
@@ -534,12 +506,10 @@ function LoginScreen({ members, groupProfile, onLogin, onGoRegister, onChangePin
 
 function RegisterScreen({ onSave, onBack, editing }) {
   const [step,    setStep]    = useState("info");   // info | pin | confirm
-  const [form,    setForm]    = useState(editing || { name:"", phone:"", dob:"", photo:"", pin:"" });
-  const [preview, setPreview] = useState(editing?.photo || "");
+  const [form,    setForm]    = useState(editing || { name:"", phone:"", dob:"", pin:"" });
   const [pin1,    setPin1]    = useState("");
   const [pin2,    setPin2]    = useState("");
   const [pinErr,  setPinErr]  = useState("");
-  const fileRef = useRef();
 
   const set = (k,v) => setForm(f => ({ ...f, [k]:v }));
   const validInfo = form.name.trim() && form.phone.trim() && form.dob &&
@@ -602,20 +572,13 @@ function RegisterScreen({ onSave, onBack, editing }) {
           </div>
         )}
 
-        {/* Photo */}
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", marginBottom:24 }}>
-          <div onClick={() => fileRef.current.click()}
-            style={{ width:100, height:100, borderRadius:"50%", border:"3px dashed rgba(255,255,255,0.22)", background:"rgba(255,255,255,0.06)",
-              backgroundImage:preview?`url(${preview})`:undefined, backgroundSize:"cover", backgroundPosition:"center",
-              display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
-            {!preview && <span style={{ fontSize:34 }}>📷</span>}
+        {/* Avatar preview — Dicebear generado por nombre */}
+        {form.name.trim() && (
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", marginBottom:24 }}>
+            <Avatar member={{ name: form.name }} size={90} />
+            <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, marginTop:8 }}>Tu avatar — generado por tu nombre</p>
           </div>
-          <p style={{ color:"rgba(255,255,255,0.3)", fontSize:12, marginTop:8 }}>Toca para agregar foto</p>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display:"none" }} onChange={e => {
-            const f=e.target.files[0]; if(!f) return;
-            const r=new FileReader(); r.onload=ev=>{ setPreview(ev.target.result); set("photo",ev.target.result); }; r.readAsDataURL(f);
-          }} />
-        </div>
+        )}
 
         {[
           { label:"NOMBRES Y APELLIDOS", key:"name",  type:"text", placeholder:"Ej: María García López" },
@@ -2363,7 +2326,7 @@ export default function App() {
       await updateMember(editingMember.id, form);
       setEditingMember(null);
     } else {
-      const newMember = await addMember(form);
+      await addMember(form);
       if (!form.isAdmin) {
         await addPendingApproval({ name:form.name, phone:form.phone, dob:form.dob, participates:form.participates });
       }
@@ -2381,7 +2344,15 @@ export default function App() {
   };
 
   // ── Payments ──────────────────────────────────────────────
-  const handleAddPayment     = async (p)  => await addPayment(p);
+  const handleAddPayment = async (p) => {
+    let data = { ...p };
+    // Upload voucher to Storage if it's a base64 image
+    if (data.voucher && data.voucher.startsWith("data:")) {
+      const tempId = `${data.payerId}_${Date.now()}`;
+      data.voucher = await uploadVoucher(tempId, data.voucher);
+    }
+    await addPayment(data);
+  };
   const handleConfirmPayment = async (id) => await confirmPayment(id);
 
   // ── Wishes ────────────────────────────────────────────────
@@ -2389,7 +2360,9 @@ export default function App() {
   const handleReact   = async (wishId, emoji, userId) => await reactToWish(wishId, emoji, userId);
 
   // ── Group profile ─────────────────────────────────────────
-  const handleSaveGroupProfile = async (p) => await updateGroupProfile(p);
+  const handleSaveGroupProfile = async (p) => {
+    await updateGroupProfile(p);
+  };
 
   // ── Pending approvals ─────────────────────────────────────
   const handleDismissApproval = async (i) => await dismissPendingApproval(i);
