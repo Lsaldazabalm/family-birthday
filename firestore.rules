@@ -1,0 +1,26 @@
+// firestore.rules
+// Pega estas reglas en Firebase Console →
+// Firestore Database → Reglas
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Cualquiera puede leer y escribir (app usa PIN propio, no auth de Firebase)
+    // Suficiente para un grupo familiar de confianza.
+    // Si quieres más seguridad en el futuro, agrega Firebase Auth.
+
+    match /members/{id} {
+      allow read, write: if true;
+    }
+    match /payments/{id} {
+      allow read, write: if true;
+    }
+    match /wishes/{id} {
+      allow read, write: if true;
+    }
+    match /config/{id} {
+      allow read, write: if true;
+    }
+  }
+}
