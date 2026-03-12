@@ -423,14 +423,20 @@ function ChangePinScreen({ member, onSave, onBack, skipCurrent }) {
 }
 
 function LoginScreen({ members, groupProfile, onLogin, onGoRegister, onChangePin }) {
-  const [step, setStep]   = useState("select"); // select | pin | changePin
-  const [sel,  setSel]    = useState(null);
-  const [pin,  setPin]    = useState("");
-  const [err,  setErr]    = useState("");
+  const [step,  setStep] = useState("home");   // home | phone | pin | changePin
+  const [phone, setPhone] = useState("");
+  const [sel,   setSel]   = useState(null);
+  const [pin,   setPin]   = useState("");
+  const [err,   setErr]   = useState("");
 
   const selectedMember = members.find(m => m.id === sel);
 
-  const handleSelect = (id) => { setSel(id); setPin(""); setErr(""); setStep("pin"); };
+  const handlePhoneSubmit = () => {
+    const clean = phone.replace(/\D/g,"");
+    const found = members.find(m => m.phone.replace(/\D/g,"") === clean);
+    if (!found) { setErr("No encontramos ese número. Verifica o regístrate."); return; }
+    setSel(found.id); setPin(""); setErr(""); setStep("pin");
+  };
 
   const handlePinSubmit = (entered) => {
     const m = members.find(m => m.id === sel);
@@ -439,7 +445,7 @@ function LoginScreen({ members, groupProfile, onLogin, onGoRegister, onChangePin
     else { setErr("PIN incorrecto. Inténtalo de nuevo."); setPin(""); }
   };
 
-  // Change PIN flow
+  // ── Change PIN flow ───────────────────────────────────────
   if (step === "changePin" && selectedMember) return (
     <ChangePinScreen
       member={selectedMember}
@@ -449,9 +455,10 @@ function LoginScreen({ members, groupProfile, onLogin, onGoRegister, onChangePin
     />
   );
 
+  // ── PIN step ──────────────────────────────────────────────
   if (step === "pin" && selectedMember) return (
     <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#0f0228,#1e0a45,#0f0228)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"24px 20px" }}>
-      <button onClick={() => { setStep("select"); setPin(""); setErr(""); }}
+      <button onClick={() => { setStep("phone"); setPin(""); setErr(""); }}
         style={{ position:"absolute", top:52, left:20, background:"rgba(255,255,255,0.08)", border:"none", borderRadius:12, padding:"9px 15px", color:"#fff", cursor:"pointer", fontSize:18 }}>←</button>
       <Avatar member={selectedMember} size={80} />
       <p style={{ color:"#fff", fontWeight:800, fontSize:20, margin:"14px 0 4px" }}>{selectedMember.name.split(" ")[0]}</p>
@@ -462,42 +469,60 @@ function LoginScreen({ members, groupProfile, onLogin, onGoRegister, onChangePin
         Ingresar →
       </button>
       <button onClick={() => setStep("changePin")}
-        style={{marginTop:16,background:"none",border:"none",color:"rgba(255,255,255,0.3)",fontSize:13,cursor:"pointer",textDecoration:"underline"}}>
+        style={{ marginTop:16, background:"none", border:"none", color:"rgba(255,255,255,0.3)", fontSize:13, cursor:"pointer", textDecoration:"underline" }}>
         ¿Olvidaste tu PIN?
       </button>
     </div>
   );
 
+  // ── Phone step ────────────────────────────────────────────
+  if (step === "phone") return (
+    <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#0f0228,#1e0a45,#0f0228)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"24px 20px" }}>
+      <button onClick={() => { setStep("home"); setPhone(""); setErr(""); }}
+        style={{ position:"absolute", top:52, left:20, background:"rgba(255,255,255,0.08)", border:"none", borderRadius:12, padding:"9px 15px", color:"#fff", cursor:"pointer", fontSize:18 }}>←</button>
+      <div style={{ fontSize:48, marginBottom:12 }}>📱</div>
+      <h2 style={{ color:"#fff", fontWeight:800, fontSize:22, margin:"0 0 8px" }}>¿Cuál es tu número?</h2>
+      <p style={{ color:"rgba(255,255,255,0.38)", fontSize:13, margin:"0 0 32px", textAlign:"center" }}>
+        Ingresa el celular con el que te registraste
+      </p>
+      <div style={{ width:"100%", maxWidth:340 }}>
+        <input
+          type="tel"
+          value={phone}
+          onChange={e => { setPhone(e.target.value); setErr(""); }}
+          onKeyDown={e => e.key==="Enter" && handlePhoneSubmit()}
+          placeholder="Ej: 987 654 321"
+          autoFocus
+          style={{ width:"100%", padding:"16px 18px", background:"rgba(255,255,255,0.08)", border:`1.5px solid ${err?"#f87171":"rgba(255,255,255,0.15)"}`, borderRadius:16, color:"#fff", fontSize:18, textAlign:"center", letterSpacing:2, boxSizing:"border-box", fontFamily:"inherit" }}
+        />
+        {err && <p style={{ color:"#f87171", fontSize:13, textAlign:"center", margin:"10px 0 0" }}>{err}</p>}
+        <button onClick={handlePhoneSubmit} disabled={phone.length<6}
+          style={{ marginTop:16, width:"100%", padding:"15px", background:phone.length>=6?"linear-gradient(135deg,#a855f7,#6366f1)":"#2a2a3a", border:"none", borderRadius:16, color:"#fff", fontWeight:800, fontSize:16, cursor:phone.length>=6?"pointer":"not-allowed", boxShadow:phone.length>=6?"0 4px 20px rgba(168,85,247,0.4)":"none" }}>
+          Continuar →
+        </button>
+      </div>
+    </div>
+  );
+
+  // ── Home step (pantalla inicial) ──────────────────────────
   return (
     <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#0f0228,#1e0a45,#0f0228)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"24px 20px" }}>
-      {groupProfile?.photo
-        ? <img src={groupProfile.photo} style={{width:72,height:72,borderRadius:"50%",objectFit:"cover",border:"3px solid rgba(168,85,247,0.6)",marginBottom:10}} alt="grupo"/>
-        : <div style={{ fontSize:56, marginBottom:6, filter:"drop-shadow(0 4px 16px rgba(192,132,252,.5))" }}>🎂</div>}
-      <h1 style={{ color:"#fff", fontSize:28, fontWeight:900, margin:0, letterSpacing:-1 }}>{groupProfile?.name||"FamilyBirthday"}</h1>
-      <p style={{ color:"rgba(255,255,255,0.38)", fontSize:13, margin:"6px 0 30px" }}>¿Quién eres tú?</p>
-      <div style={{ width:"100%", maxWidth:380, background:"rgba(255,255,255,0.06)", borderRadius:26, padding:20, border:"1px solid rgba(255,255,255,0.08)" }}>
-        {members.length===0 && <p style={{ color:"rgba(255,255,255,0.3)", textAlign:"center", fontSize:13, padding:"12px 0" }}>No hay integrantes aún.<br />¡Regístrate primero!</p>}
-        <div className="scroll-inner" className="scroll-inner" style={{ maxHeight:"45vh", overflowY:"auto" }}>
-          {members.map(m => (
-            <div key={m.id} onClick={() => handleSelect(m.id)}
-              style={{ display:"flex", alignItems:"center", gap:14, padding:"11px 14px", borderRadius:16, marginBottom:8, cursor:"pointer",
-                background:"rgba(255,255,255,0.05)", border:"2px solid transparent",
-                transition:"all .18s" }}
-              onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.1)"}
-              onMouseLeave={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"}>
-              <Avatar member={m} size={48} />
-              <div style={{ flex:1 }}>
-                <div style={{ color:"#fff", fontWeight:700, fontSize:15 }}>{m.name}</div>
-                <div style={{ color:"rgba(255,255,255,0.35)", fontSize:12 }}>📱 {m.phone}</div>
-              </div>
-              {isBirthdayToday(m.dob) && <span style={{ fontSize:22 }}>🎉</span>}
-              <span style={{ color:"rgba(255,255,255,0.25)", fontSize:18 }}>›</span>
-            </div>
-          ))}
-        </div>
+      <div style={{ fontSize:64, marginBottom:8, filter:"drop-shadow(0 4px 20px rgba(192,132,252,.5))" }}>🎂</div>
+      <h1 style={{ color:"#fff", fontSize:28, fontWeight:900, margin:"0 0 8px", letterSpacing:-1, textAlign:"center" }}>
+        {groupProfile?.name || "FamilyBirthday"}
+      </h1>
+      <p style={{ color:"rgba(255,255,255,0.38)", fontSize:13, margin:"0 0 48px", textAlign:"center" }}>
+        La junta de cumpleaños de tu familia 🎉
+      </p>
+
+      <div style={{ width:"100%", maxWidth:340, display:"flex", flexDirection:"column", gap:12 }}>
+        <button onClick={() => { setPhone(""); setErr(""); setStep("phone"); }}
+          style={{ width:"100%", padding:"17px", background:"linear-gradient(135deg,#a855f7,#6366f1)", border:"none", borderRadius:18, color:"#fff", fontWeight:800, fontSize:17, cursor:"pointer", boxShadow:"0 6px 24px rgba(168,85,247,0.45)", letterSpacing:0.3 }}>
+          Ingresar
+        </button>
         <button onClick={onGoRegister}
-          style={{ width:"100%", padding:"13px", marginTop:8, background:"transparent", border:"1.5px solid rgba(255,255,255,0.13)", borderRadius:16, color:"rgba(255,255,255,0.55)", fontWeight:600, fontSize:14, cursor:"pointer" }}>
-          + Registrar nuevo integrante
+          style={{ width:"100%", padding:"15px", background:"rgba(255,255,255,0.06)", border:"1.5px solid rgba(255,255,255,0.13)", borderRadius:18, color:"rgba(255,255,255,0.65)", fontWeight:700, fontSize:15, cursor:"pointer" }}>
+          Registrarse
         </button>
       </div>
     </div>
